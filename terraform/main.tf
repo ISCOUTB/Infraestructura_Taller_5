@@ -35,6 +35,26 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "archivos" {
   }
 }
 
+# ---------- Limpieza automática del bucket ----------
+resource "aws_s3_bucket_lifecycle_configuration" "archivos" {
+  bucket = aws_s3_bucket.archivos.id
+
+  rule {
+    id     = "limpieza"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
 # ---------- Almacén de imágenes Docker (ECR) ----------
 resource "aws_ecr_repository" "app" {
   name                 = "taller5-app"
