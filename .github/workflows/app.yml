@@ -38,14 +38,12 @@ jobs:
         run: docker build -t "$IMAGE" .
 
       - name: Trivy (vulnerabilidades de la imagen)
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "0"
-          format: table
-          output: trivy-report.txt
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          trivy image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 --format table --output trivy-report.txt "$IMAGE"
+          cat trivy-report.txt
 
       - name: Guardar evidencia de Trivy
         if: always()
