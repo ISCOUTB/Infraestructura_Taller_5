@@ -181,4 +181,5 @@ Medidas aplicadas: bloqueo de acceso público, versionado, cifrado en reposo y r
 
 ![Workflows en verde](docs/actions-verde.png)
 
-![Carpeta de workflows](docs/workflows-carpeta.png)
+![Carpeta de workflows](docs/workflows-carpeta.jpeg)
+
