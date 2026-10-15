@@ -19,7 +19,7 @@ variable "project" {
 variable "environment" {
   description = "Ambiente de despliegue (etiqueta Ambiente)"
   type        = string
-  default     = "dev"
+  default     = "demo"
 }
 
 variable "instance_type" {
