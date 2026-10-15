@@ -38,7 +38,7 @@ jobs:
         run: docker build -t "$IMAGE" .
 
       - name: Trivy (vulnerabilidades de la imagen)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           severity: CRITICAL,HIGH
