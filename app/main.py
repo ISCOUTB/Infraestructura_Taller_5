@@ -17,6 +17,11 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/version")
+def version():
+    return {"version": os.environ.get("APP_VERSION", "1.1.0")}
+
+
 @app.post("/files")
 async def upload_file(file: UploadFile = File(...)):
     s3.upload_fileobj(file.file, BUCKET_NAME, file.filename)
