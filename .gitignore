@@ -1,0 +1,15 @@
+# Instalador de AWS CLI
+awscliv2.zip
+aws/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+
+# Archivos locales
+trust-policy.json
+.env
+__pycache__/
