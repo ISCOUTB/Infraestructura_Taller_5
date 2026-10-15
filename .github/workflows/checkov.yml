@@ -1,0 +1,24 @@
+name: Checkov
+
+on:
+  push:
+    paths: ['terraform/**']
+  pull_request:
+    paths: ['terraform/**']
+  workflow_dispatch:
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar Checkov
+        run: pip install checkov
+
+      - name: Ejecutar Checkov sobre Terraform
+        run: checkov -d terraform --framework terraform --soft-fail
