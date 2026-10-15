@@ -138,3 +138,47 @@ terraform destroy
 ```
 
 La destruccion requiere una identidad con permisos de AWS para eliminar EC2, S3, ECR, IAM y los recursos relacionados. Verificar antes que no existan archivos que deban conservarse, ya que `force_destroy = true` permite eliminar el bucket aunque contenga objetos. Confirmar tambien en la consola de AWS que no queden recursos activos.
+## Pipeline de CI/CD (GitHub Actions)
+
+El repositorio tiene cuatro workflows en `.github/workflows/`:
+
+| Workflow | Archivo | Qué hace |
+|---|---|---|
+| Infraestructura | `infra.yml` | Valida el Terraform (`fmt`, `init`, `validate`), lo escanea con Checkov y aplica los cambios en AWS (`plan` y `apply`). |
+| Aplicacion | `app.yml` | Construye la imagen Docker, la analiza con Trivy, la publica en ECR y la despliega en la EC2 mediante SSM. |
+| Checkov | `checkov.yml` | Ejecuta Checkov de forma independiente sobre la carpeta `terraform/`. |
+| Debug OIDC | `debug-oidc.yml` | Workflow de diagnóstico usado para probar la conexión con AWS. |
+
+### Decisiones de seguridad del pipeline
+
+- **Sin claves de acceso:** los workflows entran a AWS con OIDC (`role-to-assume`). No hay claves guardadas en secretos, en el código ni dentro de la imagen.
+- **Permisos mínimos en los workflows:** el bloque `permissions` solo incluye `id-token: write` y `contents: read`.
+- **Permisos mínimos en la EC2:** el rol de la instancia solo puede listar, leer y escribir en el bucket S3 del taller, y solo descargar imágenes del repositorio ECR del taller.
+- **Sin SSH:** el puerto 22 está cerrado. El despliegue se ejecuta con AWS Systems Manager (SSM).
+- **ECR inmutable:** cada imagen se etiqueta con el hash del commit y no se puede sobrescribir. Además, el repositorio escanea las imágenes al recibirlas.
+- **Trivy:** analiza la imagen buscando vulnerabilidades CRITICAL y HIGH, guarda el reporte como artefacto (`evidencia-trivy`) y no bloquea el despliegue (`--exit-code 0`), porque el objetivo del taller es mostrar el análisis.
+
+## Resultados de seguridad (Checkov)
+
+Checkov analiza la carpeta `terraform/` en `infra.yml` y también en `checkov.yml`, que se puede lanzar manualmente desde la pestaña Actions.
+
+| Ejecución | Chequeos aprobados | Chequeos fallidos |
+|---|---|---|
+| Primera ejecución | 68 | 9 |
+| Después de agregar el ciclo de vida al bucket S3 | 70 | 8 |
+
+![Resumen de Checkov](docs/checkov-resumen.png)
+
+Los fallos restantes se aceptaron de forma consciente porque exigen recursos adicionales con costo o van en contra del objetivo de la demostración:
+
+- Replicación entre regiones, cifrado con KMS, logging de acceso y notificaciones de eventos del bucket S3.
+- Puerto 80 abierto a internet: la API debe ser accesible para la demostración. No se abre SSH.
+- Salida abierta a internet en el grupo de seguridad: la instancia debe descargar la imagen desde ECR y comunicarse con S3.
+
+Medidas aplicadas: bloqueo de acceso público, versionado, cifrado en reposo y reglas de ciclo de vida en S3; ECR inmutable con escaneo y ciclo de vida; IMDSv2 obligatorio, disco cifrado y permisos mínimos por rol IAM.
+
+## Evidencias de ejecución
+
+![Workflows en verde](docs/actions-verde.png)
+
+![Carpeta de workflows](docs/workflows-carpeta.png)
